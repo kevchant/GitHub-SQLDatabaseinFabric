@@ -6,7 +6,7 @@ In order to use it in GitHub you can either clone or fork this repository into a
 
 Afterwards, you can select the workflow file in GitHub and tailor the workflow to suit your needs.
 
-You MUST have the below secret specified for the [SQLDBinFabricExtractSchematoDacpac.yml](https://github.com/kevchant/GH-SQLDatabaseinFabric/blob/main/.github/workflows/SQLDBinFabricExtractSchematoDacpac.yml) workflow to work:
+You MUST have the below secret specified for the [SQLDBinFabricExtractSchematoDacpac.yml](https://github.com/kevchant/GitHub-SQLDatabaseinFabric/blob/main/.github/workflows/SQLDBinFabricExtractSchematoDacpac.yml) workflow to work:
 * SOURCEDB_CONNECTION_STRING - Connection string to connect to the source SQL database in Fabric
 
 You MUST have the below secret specified for either workflow to work:
