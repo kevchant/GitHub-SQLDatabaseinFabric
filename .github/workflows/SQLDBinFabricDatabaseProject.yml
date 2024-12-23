@@ -1,0 +1,76 @@
+name: Update SQL database in Fabric from a Database Project
+
+# Sets the trigger to be triggered manually
+on: 
+  workflow_dispatch:
+
+# Alternatively, can sets the trigger to update when pull request is done to the main branch
+# on:
+#   pull_request:
+#     branches: 
+#       - main
+      
+# Specify variables
+env:
+  ARTIFACT: SQLdbinFabric
+  # TARGET_DW: CICDDWGH
+
+jobs:
+
+  # Job to build and publish the dacpac
+  BuildDacpac:
+    # I use a GitHub-Hosted runner here, you can opt to use a self-hosted one instead
+    runs-on: windows-latest
+    
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4.2.2
+      
+      # Build dacpac using dotnet build
+      - name: Build Database project based on the contents of the DataWarehouse subfolder
+        run: |
+          dotnet build
+          
+      # Publish artifact
+      - uses: actions/upload-artifact@v4.5.0
+        with:
+          name: ${{env.ARTIFACT}}
+          path: ${{ github.workspace }}/bin/Debug/ 
+
+# Deploy dacpac job
+  DeploySQLDBinFabricUpdates:
+    # Set the dependency for the build job
+    needs: BuildDacpac
+    # Easier to use Github-hosted runner if updating in GitHub
+    runs-on: windows-latest
+
+    # Steps to deploy the updates to a SQL database in Fabric
+    steps:
+      # Install latest version of SqlPackage on the runner
+      - name: Update SqlPackage
+        run: |
+          dotnet tool install --global Microsoft.SqlPackage
+    
+      - name: download artifact containing dacpac
+        # Dowloads Data artifact to dacpac folder
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: ${{env.ARTIFACT}}
+
+      # Installs dacpac
+      # For this to work you MUST have a secret specified, default in my repo is blank
+      # Requires a secret DESTINATIONDB_CONNECTION_STRING which contains connection string to your SQL database in Fabric
+      - name: SQL database in Fabric Deploy
+        uses: Azure/sql-action@v2.3
+        with:
+          # The connection string, including authentication information, for the Azure SQL Database.
+          connection-string: '${{ secrets.DESTINATIONDB_CONNECTION_STRING }}'
+          # Path to the dacpac file in the artifact
+          path: 'SQLDBinFabric.dacpac'
+          # Action we want it to do, in this case 'Publish' the contents of the dacpac to the database
+          action: 'publish'  
+          # Since no Firewall in-place
+          skip-firewall-check: 'True'
+          arguments: '/p:AllowIncompatiblePlatform=True'
